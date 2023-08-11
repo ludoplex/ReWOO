@@ -169,11 +169,10 @@ class ZipCodeRetriever(Node):
         data = response.json()
         return data["ip"]
 
-    def get_location_data(sefl, ip_address):
+    def get_location_data(self, ip_address):
         url = f"https://ipinfo.io/{ip_address}/json"
         response = requests.get(url)
-        data = response.json()
-        return data
+        return response.json()
 
     def get_zipcode_from_lat_long(self, lat, long):
         geolocator = Nominatim(user_agent="zipcode_locator")
@@ -184,8 +183,7 @@ class ZipCodeRetriever(Node):
         ip_address = self.get_ip_address()
         location_data = self.get_location_data(ip_address)
         lat, long = location_data["loc"].split(",")
-        zipcode = self.get_zipcode_from_lat_long(float(lat), float(long))
-        return zipcode
+        return self.get_zipcode_from_lat_long(float(lat), float(long))
 
     def run(self, input):
         assert isinstance(input, self.input_type)

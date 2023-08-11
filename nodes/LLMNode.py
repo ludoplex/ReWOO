@@ -25,9 +25,7 @@ class LLMNode(Node):
         assert isinstance(input, self.input_type)
         response = self.call_llm(input, self.stop)
         completion = response["output"]
-        if log:
-            return response
-        return completion
+        return response if log else completion
 
     def call_llm(self, prompt, stop):
         if self.model_name in OPENAI_COMPLETION_MODELS:

@@ -29,7 +29,6 @@ class PWS:
     def run(self, input):
         # run is stateless, so we need to reset the evidences
         self._reinitialize()
-        result = {}
         st = time.time()
         # Plan
         planner_response = self.planner.run(input, log=True)
@@ -51,7 +50,7 @@ class PWS:
         output = solver_response["output"]
         solver_log = solver_response["input"] + solver_response["output"]
 
-        result["wall_time"] = time.time() - st
+        result = {"wall_time": time.time() - st}
         result["input"] = input
         result["output"] = output
         result["planner_log"] = planner_log
@@ -60,23 +59,19 @@ class PWS:
         result["tool_usage"] = self.tool_counter
         result["steps"] = len(self.plans) + 1
         result["total_tokens"] = planner_response["prompt_tokens"] + planner_response["completion_tokens"] \
-                                 + solver_response["prompt_tokens"] + solver_response["completion_tokens"] \
-                                 + self.tool_counter.get("LLM_token", 0) \
-                                 + self.tool_counter.get("Calculator_token", 0)
+                                     + solver_response["prompt_tokens"] + solver_response["completion_tokens"] \
+                                     + self.tool_counter.get("LLM_token", 0) \
+                                     + self.tool_counter.get("Calculator_token", 0)
         result["token_cost"] = self.planner_token_unit_price * (planner_response["prompt_tokens"] + planner_response["completion_tokens"]) \
-                               + self.solver_token_unit_price * (solver_response["prompt_tokens"] + solver_response["completion_tokens"]) \
-                               + self.tool_token_unit_price * (self.tool_counter.get("LLM_token", 0) + self.tool_counter.get("Calculator_token", 0))
+                                   + self.solver_token_unit_price * (solver_response["prompt_tokens"] + solver_response["completion_tokens"]) \
+                                   + self.tool_token_unit_price * (self.tool_counter.get("LLM_token", 0) + self.tool_counter.get("Calculator_token", 0))
         result["tool_cost"] = self.tool_counter.get("Google", 0) * self.google_unit_price
         result["total_cost"] = result["token_cost"] + result["tool_cost"]
 
         return result
 
     def _parse_plans(self, response):
-        plans = []
-        for line in response.splitlines():
-            if line.startswith("Plan:"):
-                plans.append(line)
-        return plans
+        return [line for line in response.splitlines() if line.startswith("Plan:")]
 
     def _parse_planner_evidences(self, response):
         evidences = {}
@@ -84,10 +79,7 @@ class PWS:
             if line.startswith("#") and line[1] == "E" and line[2].isdigit():
                 e, tool_call = line.split("=", 1)
                 e, tool_call = e.strip(), tool_call.strip()
-                if len(e) == 3:
-                    evidences[e] = tool_call
-                else:
-                    evidences[e] = "No evidence found"
+                evidences[e] = tool_call if len(e) == 3 else "No evidence found"
         return evidences
 
     # use planner evidences to assign tasks to respective workers.
@@ -101,7 +93,7 @@ class PWS:
             # find variables in input and replace with previous evidences
             for var in re.findall(r"#E\d+", tool_input):
                 if var in self.worker_evidences:
-                    tool_input = tool_input.replace(var, "[" + self.worker_evidences[var] + "]")
+                    tool_input = tool_input.replace(var, f"[{self.worker_evidences[var]}]")
             if tool in self.workers:
                 self.worker_evidences[e] = WORKER_REGISTRY[tool].run(tool_input)
                 if tool == "Google":
@@ -111,7 +103,7 @@ class PWS:
                         tool_input + self.worker_evidences[e]) // 4
                 elif tool == "Calculator":
                     self.tool_counter["Calculator_token"] = self.tool_counter.get("Calculator_token", 0) \
-                                                            + len(
+                                                                + len(
                         LLMMathChain(llm=OpenAI(), verbose=False).prompt.template + tool_input + self.worker_evidences[
                             e]) // 4
             else:

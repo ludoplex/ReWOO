@@ -13,6 +13,4 @@ class Solver(LLMNode):
         prompt = self.prefix + input + "\n" + worker_log + self.suffix + input + '\n'
         response = self.call_llm(prompt, self.stop)
         completion = response["output"]
-        if log:
-            return response
-        return completion
+        return response if log else completion

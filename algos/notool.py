@@ -12,11 +12,10 @@ class IO:
         self.token_unit_price = get_token_unit_price(model_name)
 
     def run(self, input):
-        result = {}
         st = time.time()
         prompt = self.context_prompt + self.fewshot + input + '\n'
         response = self.llm.run(prompt, log=True)
-        result["wall_time"] = time.time() - st
+        result = {"wall_time": time.time() - st}
         result["input"] = response["input"]
         result["output"] = response["output"]
         result["prompt_tokens"] = response["prompt_tokens"]
@@ -39,11 +38,10 @@ class CoT:
         self.token_unit_price = get_token_unit_price(model_name)
 
     def run(self, input):
-        result = {}
         st = time.time()
         prompt = self.context_prompt + self.fewshot + input + '\n'
         response = self.llm.run(prompt, log=True)
-        result["wall_time"] = time.time() - st
+        result = {"wall_time": time.time() - st}
         result["input"] = response["input"]
         result["output"] = response["output"]
         result["prompt_tokens"] = response["prompt_tokens"]
