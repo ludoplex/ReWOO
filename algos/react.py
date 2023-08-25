@@ -89,10 +89,10 @@ class ReactBase:
     def _parse_tool(self, intermediate_steps):
         tool_usage = {"search": 0, "lookup": 0}
         for step in intermediate_steps:
-            if step[0].tool == "Search":
-                tool_usage["search"] += 1
             if step[0].tool == "Lookup":
                 tool_usage["lookup"] += 1
+            elif step[0].tool == "Search":
+                tool_usage["search"] += 1
         return tool_usage
 
 
@@ -153,10 +153,10 @@ class ReactExtraTool(ReactBase):
     def _parse_tool(self, intermediate_steps):
         tool_usage = {"serpapi": 0, "llm-math_token": 0}
         for step in intermediate_steps:
-            if step[0].tool == "Search":
-                tool_usage["serpapi"] += 1
             if step[0].tool == "Calculator":
                 tool_usage["llm-math_token"] += len(step[0].tool_input + step[1]) // 4  # 4 chars per token
+            elif step[0].tool == "Search":
+                tool_usage["serpapi"] += 1
         return tool_usage
 
     def _get_worker(self, name):

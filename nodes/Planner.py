@@ -21,9 +21,7 @@ class Planner(LLMNode):
             prompt = [self.prefix + self.worker_prompt, input]
         response = self.call_llm(prompt, self.stop)
         completion = response["output"]
-        if log:
-            return response
-        return completion
+        return response if log else completion
 
     def _get_worker(self, name):
         if name in WORKER_REGISTRY:

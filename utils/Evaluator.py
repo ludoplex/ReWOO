@@ -47,8 +47,7 @@ def f1_score(prediction, ground_truth):
         return 0
     precision = 1.0 * num_same / len(prediction_tokens)
     recall = 1.0 * num_same / len(ground_truth_tokens)
-    f1 = (2 * precision * recall) / (precision + recall)
-    return f1
+    return (2 * precision * recall) / (precision + recall)
 
 
 def llm_accuracy_score(query, prediction, ground_truth):
@@ -144,11 +143,24 @@ class Evaluator:
         return self._get_avg_results(), self.eval_data
 
     def _initialize_eval_dict(self):
-        data = {}
-        for d in ["label", "preds", "em", "f1", "acc", "wall_time", "total_tokens", "total_cost", "steps", "token_cost",
-                  "tool_cost", "planner_log", "solver_log"]:
-            data[d] = []
-        return data
+        return {
+            d: []
+            for d in [
+                "label",
+                "preds",
+                "em",
+                "f1",
+                "acc",
+                "wall_time",
+                "total_tokens",
+                "total_cost",
+                "steps",
+                "token_cost",
+                "tool_cost",
+                "planner_log",
+                "solver_log",
+            ]
+        }
 
     def _update_eval_dict(self, question, label, response):
         pred = self._parse_prediction(response["output"])
@@ -170,8 +182,7 @@ class Evaluator:
             self.eval_data["solver_log"] += [response["solver_log"]]
 
     def _get_avg_results(self):
-        result = {}
-        result["avg_em"] = np.nanmean(self.eval_data["em"])
+        result = {"avg_em": np.nanmean(self.eval_data["em"])}
         result["avg_f1"] = np.nanmean(self.eval_data["f1"])
         result["avg_acc"] = np.nanmean(self.eval_data["acc"])
         result["avg_wall_time"] = np.nanmean(self.eval_data["wall_time"])
@@ -193,19 +204,30 @@ class Evaluator:
         return {'em': em, 'f1': f1, 'acc': acc}
 
     def _parse_prediction(self, output):
-        if isinstance(self.algo, IO):
+        if (
+            isinstance(self.algo, IO)
+            or not isinstance(self.algo, CoT)
+            and isinstance(self.algo, ReactBase)
+            or not isinstance(self.algo, CoT)
+            and isinstance(self.algo, PWS_Base)
+            or not isinstance(self.algo, CoT)
+            and isinstance(self.algo, PWS_Extra)
+        ):
             return str(output).strip("\n")
         elif isinstance(self.algo, CoT):
             return str(output).split("\n")[-1].replace("Answer:", "")
-        elif isinstance(self.algo, ReactBase):
-            return str(output).strip("\n")
-        elif isinstance(self.algo, PWS_Base):
-            return str(output).strip("\n")
-        elif isinstance(self.algo, PWS_Extra):
-            return str(output).strip("\n")
 
     def _failed_response(self):
-        resposne = {}
-        for key in ["input", "output", "wall_time", "total_tokens", "total_cost", "steps", "token_cost", "tool_cost"]:
-            resposne[key] = np.nan
-        return resposne
+        return {
+            key: np.nan
+            for key in [
+                "input",
+                "output",
+                "wall_time",
+                "total_tokens",
+                "total_cost",
+                "steps",
+                "token_cost",
+                "tool_cost",
+            ]
+        }
